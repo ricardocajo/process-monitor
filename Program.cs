@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Text.RegularExpressions;
+using NUnit.Framework;
 class Program 
 {
     static void Main(string[] args)
@@ -85,5 +86,88 @@ class Program
                 process.Kill();
             }
         }
+    }
+}
+
+class ProgramTests
+{
+    [TestCase("notepad", 2, 1)]
+    public void TestProcessShouldntBeRunning(string process_name, double lifetime, double frequency)
+    {
+        // Declare the monitor and test processes
+        Process notepad_process = new Process();
+        notepad_process.StartInfo.FileName = "notepad.exe";
+        Process monitor_process = new Process();
+        monitor_process.StartInfo.FileName = "process-monitor.exe";
+        monitor_process.StartInfo.Arguments = process_name + " " + lifetime + " " + frequency;
+
+        // Start the process to be tested
+        notepad_process.Start();
+
+        // Wait a litle and start the monitoring process
+        Thread.Sleep(100);
+        monitor_process.Start();
+
+        // Wait a litle more than the defined lifetime
+        Thread.Sleep((int)(lifetime * 60100));
+
+        // Check if process is running
+        bool is_process_running = true;
+        try
+        {
+            Process.GetProcessById(notepad_process.Id);
+            
+            //Process is still running, kill it
+            notepad_process.Kill();
+        }
+        catch (ArgumentException)
+        {
+            is_process_running = false;
+        }
+
+        monitor_process.Kill();
+
+        // Assert that the created test process was killed
+        Assert.AreEqual(is_process_running, false);
+    }
+
+    [TestCase("notepad", 2, 1)]
+    public void TestProcessShouldBeRunning(string process_name, double lifetime, double frequency)
+    {
+        // Declare the monitor and test processes
+        Process notepad_process = new Process();
+        notepad_process.StartInfo.FileName = "notepad.exe";
+        Process monitor_process = new Process();
+        monitor_process.StartInfo.FileName = "process-monitor.exe";
+        monitor_process.StartInfo.Arguments = process_name + " " + lifetime + " " + frequency;
+
+        // Start the process to be tested
+        notepad_process.Start();
+
+        // Wait a litle and start the monitoring process
+        Thread.Sleep(100);
+        monitor_process.Start();
+
+        // Wait a litle more than the defined lifetime
+        Thread.Sleep((int)(lifetime / 2 * 60100));
+
+        // Check if process is running
+        bool is_process_running = true;
+        try
+        {
+            Process.GetProcessById(notepad_process.Id);
+
+            //Process is still running, kill it
+            notepad_process.Kill();
+        }
+        catch (ArgumentException)
+        {
+            is_process_running = false;
+        }
+
+        monitor_process.Kill();
+
+        // Assert that the created test process was killed
+        Assert.AreEqual(is_process_running, true);
     }
 }
